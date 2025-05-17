@@ -56,11 +56,18 @@ def embed_images_in_html(html_content, sfmc_token=None):
     return str(soup)
 
 def recursive_embed_images(obj, sfmc_token=None):
+    # Keys that are likely to contain image URLs
+    image_keys = {"src", "icon", "image", "logo", "thumbnail"}
+
     if isinstance(obj, dict):
         new_obj = {}
         for k, v in obj.items():
-            # If the key is 'src' and the value looks like an image URL, embed it
-            if k.lower() == "src" and isinstance(v, str) and v.startswith("http"):
+            # Check if the key is likely to contain an image URL
+            if (
+                any(word in k.lower() for word in image_keys)
+                and isinstance(v, str)
+                and v.startswith("http")
+            ):
                 print(f"Embedding image: {v}")  # Debugging line
                 embedded = encode_image_from_url(v, sfmc_token)
                 new_obj[k] = embedded
