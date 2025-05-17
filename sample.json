@@ -1,15 +1,99 @@
 {
-  "subject": "Welcome to Our Newsletter!",
-  "html_content": "<html><body><h1>Stay Connected</h1><p>Follow us on social media for updates:</p><img src=\"https://image.exct.net/lib/fe5f15707267027a7712/m/1/socialshare-instagram-grey-2x.png\" alt=\"Instagram\" style=\"width:40px;height:40px; margin-right:10px;\"><img src=\"https://image.exct.net/lib/fe5f15707267027a7712/m/1/socialshare-pinterest-grey-2x.png\" alt=\"Pinterest\" style=\"width:40px;height:40px;\"></body></html>",
-  "footer": "Thank you for subscribing!",
-  "sections": [
-    {
-      "title": "Latest Updates",
-      "content": "<div><p>Check out our latest articles and resources to stay informed.</p></div>"
+  "background": {
+    "color": "#efefef",
+    "font": {
+      "color": "#181818",
+      "size": "16px",
+      "family": "Arial, Helvetica, sans-serif"
     },
-    {
-      "title": "Contact Us",
-      "content": "<div><p>If you have any questions, reply to this email or visit our <a href=\"https://www.example.com/contact\">contact page</a>.</p></div>"
-    }
-  ]
+    "padding": "20px"
+  },
+  "container": {
+    "width": "600px",
+    "backgroundColor": "#ffffff",
+    "sections": [
+      {
+        "type": "header",
+        "image": {
+          "src": "https://image.s7.sfmc-content.com/lib/fe8f13727662037877/m/1/63d193de-7a94-416b-b268-0ed0e87844fe.png",
+          "alt": "Image placeholder",
+          "width": "200",
+          "height": "59"
+        }
+      },
+      {
+        "type": "main",
+        "image": {
+          "src": "https://image.s7.sfmc-content.com/lib/fe8f13727662037877/m/1/0581b733-8d43-4468-a09b-6b7b9545df0e.jpg",
+          "alt": "Image placeholder",
+          "width": "100%",
+          "height": "auto"
+        },
+        "title": "Lorem ipsum dolor sit amet",
+        "titleStyle": {
+          "textAlign": "center",
+          "fontFamily": "Arial, Helvetica, sans-serif",
+          "fontSize": "28px",
+          "color": "#181818",
+          "fontWeight": "bold"
+        },
+        "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Praesent quis nisl in turpis sodales luctus aliquet at quam. Fusce quis enim placerat lectus mattis auctor vel quis mauris. Class aptent taciti sociosqu ad litora torquent per conubia nostra, per inceptos himenaeos. Sed quis suscipit diam, nec lacinia neque. Nunc iaculis non arcu eget volutpat.",
+        "button": {
+          "text": "Button Text",
+          "url": "http://",
+          "backgroundColor": "#7F10EE",
+          "color": "#FFFFFF",
+          "borderRadius": "3px",
+          "padding": "10px"
+        }
+      },
+      {
+        "type": "social",
+        "socialLinks": [
+          {
+            "platform": "Facebook",
+            "url": "alias=facebook%20follow",
+            "icon": "https://image.exct.net/lib/fe5f15707267027a7712/m/1/socialshare-facebook-grey-2x.png"
+          },
+          {
+            "platform": "X",
+            "url": "alias=twitter%20follow",
+            "icon": "https://image.exct.net/lib/fe5f15707267027a7712/m/1/socialshare-x-grey-2x.png"
+          },
+          {
+            "platform": "Pinterest",
+            "url": "alias=pinterest%20follow",
+            "icon": "https://image.exct.net/lib/fe5f15707267027a7712/m/1/socialshare-pinterest-grey-2x.png"
+          },
+          {
+            "platform": "Instagram",
+            "url": "alias=instagram%20follow",
+            "icon": "https://image.exct.net/lib/fe5f15707267027a7712/m/1/socialshare-instagram-grey-2x.png"
+          }
+        ]
+      },
+      {
+        "type": "footer",
+        "links": [
+          {
+            "text": "LINK",
+            "url": "http://"
+          },
+          {
+            "text": "LINK",
+            "url": "http://"
+          },
+          {
+            "text": "LINK",
+            "url": "http://"
+          }
+        ],
+        "disclaimer": "Quo ea modus impedit omittantur. Mel suavitate comceptam et, in vim nihil tibique. Is vis epicuri fierent accusamus, enim liveravisse necessitatibus no eos.",
+        "disclaimerStyle": {
+          "fontSize": "12px",
+          "textAlign": "center"
+        }
+      }
+    ]
+  }
 }
