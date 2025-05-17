@@ -1,0 +1,15 @@
+{
+  "subject": "Welcome to Our Newsletter!",
+  "html_content": "<html><body><h1>Stay Connected</h1><p>Follow us on social media for updates:</p><img src=\"https://image.exct.net/lib/fe5f15707267027a7712/m/1/socialshare-instagram-grey-2x.png\" alt=\"Instagram\" style=\"width:40px;height:40px; margin-right:10px;\"><img src=\"https://image.exct.net/lib/fe5f15707267027a7712/m/1/socialshare-pinterest-grey-2x.png\" alt=\"Pinterest\" style=\"width:40px;height:40px;\"></body></html>",
+  "footer": "Thank you for subscribing!",
+  "sections": [
+    {
+      "title": "Latest Updates",
+      "content": "<div><p>Check out our latest articles and resources to stay informed.</p></div>"
+    },
+    {
+      "title": "Contact Us",
+      "content": "<div><p>If you have any questions, reply to this email or visit our <a href=\"https://www.example.com/contact\">contact page</a>.</p></div>"
+    }
+  ]
+}
