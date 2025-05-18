@@ -3,6 +3,8 @@
 from flask import Flask, request, jsonify
 import requests
 import base64
+import mimetypes
+import re
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 
@@ -27,7 +29,15 @@ def get_sfmc_access_token():
         print(f"Error getting SFMC token: {e}")
         return None
 
-def encode_image_from_url(url, sfmc_token=None):
+def is_image_url(url):
+    """Check if a URL points to an image by extension or content-type."""
+    image_extensions = ('.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg')
+    parsed = urlparse(url)
+    if parsed.scheme in ('http', 'https') and url.lower().endswith(image_extensions):
+        return True
+    return False
+
+def embed_image_url(url, sfmc_token=None):
     try:
         headers = {}
         # If the image URL is from SFMC, add Authorization header
@@ -38,7 +48,10 @@ def encode_image_from_url(url, sfmc_token=None):
                 headers["Authorization"] = f"Bearer {sfmc_token}"
         response = requests.get(url, headers=headers)
         response.raise_for_status()
-        content_type = response.headers.get("Content-Type", "image/jpeg")
+        content_type = response.headers.get("Content-Type") or mimetypes.guess_type(url)[0] or "image/jpeg"
+        if not content_type.startswith("image/"):
+            # Not an image, don't embed
+            return url
         encoded = base64.b64encode(response.content).decode("utf-8")
         return f"data:{content_type};base64,{encoded}"
     except Exception as e:
@@ -47,101 +60,49 @@ def encode_image_from_url(url, sfmc_token=None):
 
 def embed_images_in_html(html_content, sfmc_token=None):
     soup = BeautifulSoup(html_content, "html.parser")
+    # Embed <img src="...">
     for img in soup.find_all("img", src=True):
         src = img["src"]
         if urlparse(src).scheme in ["http", "https"]:
-            embedded = encode_image_from_url(src, sfmc_token)
+            embedded = embed_image_url(src, sfmc_token)
             if embedded.startswith("data:image/"):
                 img["src"] = embedded
+    # Embed inline CSS background images: url(...)
+    for tag in soup.find_all(style=True):
+        style = tag["style"]
+        urls = re.findall(r'url\(([^)]+)\)', style)
+        for url in urls:
+            url_clean = url.strip(' "\'')
+            if urlparse(url_clean).scheme in ["http", "https"]:
+                embedded = embed_image_url(url_clean, sfmc_token)
+                if embedded.startswith("data:image/"):
+                    style = style.replace(url, f'"{embedded}"')
+        tag["style"] = style
     return str(soup)
 
-def recursive_embed_images(obj, sfmc_token=None):
-    # Keys that are likely to contain image URLs
-    image_keys = {"src", "icon", "image", "logo", "thumbnail"}
+def embed_images_in_string(s, sfmc_token=None):
+    # If string is HTML with <img>, process as HTML
+    if "<img" in s.lower() or "background-image" in s.lower():
+        return embed_images_in_html(s, sfmc_token)
+    # Otherwise, check if it's a direct image URL
+    if s.startswith("http://") or s.startswith("https://"):
+        if is_image_url(s):
+            return embed_image_url(s, sfmc_token)
+    return s
 
+def recursive_embed_images(obj, sfmc_token=None):
     if isinstance(obj, dict):
-        new_obj = {}
-        for k, v in obj.items():
-            # Check if the key is likely to contain an image URL
-            if (
-                any(word in k.lower() for word in image_keys)
-                and isinstance(v, str)
-                and v.startswith("http")
-            ):
-                print(f"Embedding image: {v}")  # Debugging line
-                embedded = encode_image_from_url(v, sfmc_token)
-                new_obj[k] = embedded
-            else:
-                new_obj[k] = recursive_embed_images(v, sfmc_token)
-        return new_obj
+        return {k: recursive_embed_images(v, sfmc_token) for k, v in obj.items()}
     elif isinstance(obj, list):
         return [recursive_embed_images(item, sfmc_token) for item in obj]
     elif isinstance(obj, str):
-        # Only process if it looks like HTML with <img
-        if "<img" in obj.lower():
-            return embed_images_in_html(obj, sfmc_token)
-        else:
-            return obj
+        return embed_images_in_string(obj, sfmc_token)
     else:
         return obj
 
-# NEW: Convert your JSON structure to HTML
-def json_to_html(data):
-    # Extract background and container
-    background = data.get("background", {})
-    container = data.get("container", {})
-    sections = container.get("sections", [])
-
-    # Build CSS styles
-    bg_style = f"background-color:{background.get('color', '#fff')};padding:{background.get('padding', '0')};"
-    font = background.get("font", {})
-    font_style = f"color:{font.get('color', '#000')};font-size:{font.get('size', '16px')};font-family:{font.get('family', 'Arial, Helvetica, sans-serif')};"
-
-    container_style = f"width:{container.get('width', '600px')};background-color:{container.get('backgroundColor', '#fff')};margin:0 auto;"
-
-    html = [f'<div style="{bg_style}{font_style}"><div style="{container_style}">']
-
-    for section in sections:
-        if section.get("type") == "header":
-            image = section.get("image", {})
-            html.append(f'<div style="text-align:center;padding:20px 0;">'
-                        f'<img src="{image.get("src","")}" alt="{image.get("alt","")}" width="{image.get("width","")}" height="{image.get("height","")}" style="display:block;margin:0 auto;"/>'
-                        f'</div>')
-        elif section.get("type") == "main":
-            image = section.get("image", {})
-            title = section.get("title", "")
-            title_style = section.get("titleStyle", {})
-            title_css = f"text-align:{title_style.get('textAlign','center')};font-family:{title_style.get('fontFamily','Arial, Helvetica, sans-serif')};font-size:{title_style.get('fontSize','28px')};color:{title_style.get('color','#181818')};font-weight:{title_style.get('fontWeight','bold')};"
-            description = section.get("description", "")
-            button = section.get("button", {})
-            html.append(f'<div style="padding:20px;text-align:center;">'
-                        f'<img src="{image.get("src","")}" alt="{image.get("alt","")}" width="{image.get("width","")}" height="{image.get("height","")}" style="width:100%;height:auto;display:block;margin:0 auto;"/><br/>'
-                        f'<div style="{title_css}">{title}</div>'
-                        f'<div style="margin:20px 0;">{description}</div>'
-                        f'<a href="{button.get("url","#")}" style="background-color:{button.get("backgroundColor","#7F10EE")};color:{button.get("color","#FFF")};border-radius:{button.get("borderRadius","3px")};padding:{button.get("padding","10px")};text-decoration:none;display:inline-block;">{button.get("text","Button")}</a>'
-                        f'</div>')
-        elif section.get("type") == "social":
-            social_links = section.get("socialLinks", [])
-            html.append('<div style="text-align:center;padding:20px 0;">')
-            for link in social_links:
-                html.append(f'<a href="{link.get("url","#")}" style="margin:0 5px;"><img src="{link.get("icon","")}" alt="{link.get("platform","")}" width="24" height="24" style="vertical-align:middle;"/></a>')
-            html.append('</div>')
-        elif section.get("type") == "footer":
-            links = section.get("links", [])
-            disclaimer = section.get("disclaimer", "")
-            disclaimer_style = section.get("disclaimerStyle", {})
-            disclaimer_css = f"font-size:{disclaimer_style.get('fontSize','12px')};text-align:{disclaimer_style.get('textAlign','center')};"
-            html.append('<div style="padding:20px 0;text-align:center;">')
-            for link in links:
-                html.append(f'<a href="{link.get("url","#")}" style="margin:0 10px;color:#7F10EE;text-decoration:none;">{link.get("text","LINK")}</a>')
-            html.append(f'<div style="{disclaimer_css};margin-top:10px;">{disclaimer}</div>')
-            html.append('</div>')
-    html.append('</div></div>')
-    return ''.join(html)
-
 @app.route("/", methods=["GET"])
 def health_check():
-    return "Flask app is running on Render! (Static test response)", 200
+    return "Flask app is running!", 200
 
 @app.route("/embed-images", methods=["POST"])
 def process_json():
@@ -149,11 +110,9 @@ def process_json():
     if not data:
         return jsonify({"error": "No JSON provided"}), 400
     try:
-        # Get SFMC token once and reuse for all image requests in this call
         sfmc_token = get_sfmc_access_token()
         processed = recursive_embed_images(data, sfmc_token)
-        html_string = json_to_html(processed)
-        return jsonify({"html": html_string})
+        return jsonify(processed)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
