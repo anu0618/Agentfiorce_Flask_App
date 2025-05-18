@@ -56,7 +56,7 @@ def upload_to_moc(image_name, image_bytes, access_token, instance_url):
         "Authorization": f"Bearer {access_token}"
     }
     metadata = {
-        "contentSpaceOrFolderId": CONTENT_SPACE_FOLDER_ID,
+        "contentSpaceId": CONTENT_SPACE_FOLDER_ID,
         "title": image_name,
         "contentType": "sfdc_cms__image",
         "contentBody": {
