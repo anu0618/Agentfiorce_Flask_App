@@ -85,6 +85,60 @@ def recursive_embed_images(obj, sfmc_token=None):
     else:
         return obj
 
+# NEW: Convert your JSON structure to HTML
+def json_to_html(data):
+    # Extract background and container
+    background = data.get("background", {})
+    container = data.get("container", {})
+    sections = container.get("sections", [])
+
+    # Build CSS styles
+    bg_style = f"background-color:{background.get('color', '#fff')};padding:{background.get('padding', '0')};"
+    font = background.get("font", {})
+    font_style = f"color:{font.get('color', '#000')};font-size:{font.get('size', '16px')};font-family:{font.get('family', 'Arial, Helvetica, sans-serif')};"
+
+    container_style = f"width:{container.get('width', '600px')};background-color:{container.get('backgroundColor', '#fff')};margin:0 auto;"
+
+    html = [f'<div style="{bg_style}{font_style}"><div style="{container_style}">']
+
+    for section in sections:
+        if section.get("type") == "header":
+            image = section.get("image", {})
+            html.append(f'<div style="text-align:center;padding:20px 0;">'
+                        f'<img src="{image.get("src","")}" alt="{image.get("alt","")}" width="{image.get("width","")}" height="{image.get("height","")}" style="display:block;margin:0 auto;"/>'
+                        f'</div>')
+        elif section.get("type") == "main":
+            image = section.get("image", {})
+            title = section.get("title", "")
+            title_style = section.get("titleStyle", {})
+            title_css = f"text-align:{title_style.get('textAlign','center')};font-family:{title_style.get('fontFamily','Arial, Helvetica, sans-serif')};font-size:{title_style.get('fontSize','28px')};color:{title_style.get('color','#181818')};font-weight:{title_style.get('fontWeight','bold')};"
+            description = section.get("description", "")
+            button = section.get("button", {})
+            html.append(f'<div style="padding:20px;text-align:center;">'
+                        f'<img src="{image.get("src","")}" alt="{image.get("alt","")}" width="{image.get("width","")}" height="{image.get("height","")}" style="width:100%;height:auto;display:block;margin:0 auto;"/><br/>'
+                        f'<div style="{title_css}">{title}</div>'
+                        f'<div style="margin:20px 0;">{description}</div>'
+                        f'<a href="{button.get("url","#")}" style="background-color:{button.get("backgroundColor","#7F10EE")};color:{button.get("color","#FFF")};border-radius:{button.get("borderRadius","3px")};padding:{button.get("padding","10px")};text-decoration:none;display:inline-block;">{button.get("text","Button")}</a>'
+                        f'</div>')
+        elif section.get("type") == "social":
+            social_links = section.get("socialLinks", [])
+            html.append('<div style="text-align:center;padding:20px 0;">')
+            for link in social_links:
+                html.append(f'<a href="{link.get("url","#")}" style="margin:0 5px;"><img src="{link.get("icon","")}" alt="{link.get("platform","")}" width="24" height="24" style="vertical-align:middle;"/></a>')
+            html.append('</div>')
+        elif section.get("type") == "footer":
+            links = section.get("links", [])
+            disclaimer = section.get("disclaimer", "")
+            disclaimer_style = section.get("disclaimerStyle", {})
+            disclaimer_css = f"font-size:{disclaimer_style.get('fontSize','12px')};text-align:{disclaimer_style.get('textAlign','center')};"
+            html.append('<div style="padding:20px 0;text-align:center;">')
+            for link in links:
+                html.append(f'<a href="{link.get("url","#")}" style="margin:0 10px;color:#7F10EE;text-decoration:none;">{link.get("text","LINK")}</a>')
+            html.append(f'<div style="{disclaimer_css};margin-top:10px;">{disclaimer}</div>')
+            html.append('</div>')
+    html.append('</div></div>')
+    return ''.join(html)
+
 @app.route("/", methods=["GET"])
 def health_check():
     return "Flask app is running on Render! (Static test response)", 200
@@ -98,7 +152,8 @@ def process_json():
         # Get SFMC token once and reuse for all image requests in this call
         sfmc_token = get_sfmc_access_token()
         processed = recursive_embed_images(data, sfmc_token)
-        return jsonify(processed)
+        html_string = json_to_html(processed)
+        return jsonify({"html": html_string})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
